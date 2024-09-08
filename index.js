@@ -2,48 +2,35 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 const express = require('express');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('./middleware/auth');
+const auth = require('./middleware/auth');
+const { promisifiedReadFileSystem } = require('./db/read');
+const { promisifiedWriteFileSystem } = require('./db/write');
 
 const app = express();
 dotenv.config();
 
-app.use(express.json())
+app.use(express.json());
 
 const PORT = process.env.ENVIRONMENT === "development" ? 3000 : process.env.PORT;
 
-const promisifiedReadFileSystem = () => {
-    return new Promise((res, rej) => {
-        fs.readFile(path.join(__dirname, 'todos.json'), 'utf-8', (err, data) => {
-            if (err) return rej(err);
-            return res(JSON.parse(data));
-        });
-    });
-}
-
-const promisifiedWriteFileSystem = (data) => {
-    return new Promise((res, rej) => {
-        fs.writeFile(path.join(__dirname, 'todos.json'), JSON.stringify(data), (err) => {
-            if (err) return rej(err);
-            return res("Wrote successfully!");
-        });
-    });
-}
-
-app.get('/', async (_, res) => {
+app.get('/', auth, async (_, res) => {
     try {
-        const data = await promisifiedReadFileSystem();
+        const data = await promisifiedReadFileSystem('todos.json');
         res.status(200).send(data);
     } catch (e) {
         res.status(500).send(e);
     }
 });
 
-app.post('/todo', async (req, res) => {
+app.post('/todo', auth, async (req, res) => {
     try {
         const name = req.body.name;
         let existingTodos = [];
 
         try {
-            existingTodos = await promisifiedReadFileSystem();
+            existingTodos = await promisifiedReadFileSystem('todos.json');
         } catch (e) {
             if (e.code !== 'ENOENT') throw new Error(e);
         }
@@ -62,7 +49,7 @@ app.post('/todo', async (req, res) => {
             id: Math.floor(Math.random() * 100000000) + 1,
             name: name,
             completed: false
-        }]);
+        }], 'todos.json');
         res.status(201).send();
     } catch (e) {
         res.status(500).send({
@@ -71,12 +58,12 @@ app.post('/todo', async (req, res) => {
     }
 });
 
-app.put(`/todo/:id/:newTodoName`, async (req, res) => {
+app.put(`/todo/:id/:newTodoName`, auth, async (req, res) => {
     try {
         const id = Number(req.params.id);
         const name = req.params.newTodoName;
 
-        const data = await promisifiedReadFileSystem();
+        const data = await promisifiedReadFileSystem('todos.json');
 
         let idx = -1;
         for (let i = 0; i < data.length; i++) {
@@ -89,17 +76,17 @@ app.put(`/todo/:id/:newTodoName`, async (req, res) => {
 
         if (idx === -1) return res.status(404).send({ error: `Given ID ${id} is invalid` });
 
-        await promisifiedWriteFileSystem(data);
+        await promisifiedWriteFileSystem(data, 'todos.json');
         res.status(204).send();
     } catch (e) {
         res.status(500).send(e);
     }
 });
 
-app.patch(`/todo/complete/:id`, async (req, res) => {
+app.patch(`/todo/complete/:id`, auth, async (req, res) => {
     try {
         const id = Number(req.params.id);
-        const data = await promisifiedReadFileSystem();
+        const data = await promisifiedReadFileSystem('todos.json');
 
         let idx = -1;
         for (let i = 0; i < data.length; i++) {
@@ -112,17 +99,17 @@ app.patch(`/todo/complete/:id`, async (req, res) => {
 
         if (idx === -1) return res.status(404).send({ error: `Given ID ${id} is invalid` });
 
-        await promisifiedWriteFileSystem(data);
+        await promisifiedWriteFileSystem(data, 'todos.json');
         res.status(201).send();
     } catch (e) {
         res.status(500).send(e);
     }
 });
 
-app.delete(`/todo/:id`, async (req, res) => {
+app.delete(`/todo/:id`, auth, async (req, res) => {
     try {
         const id = Number(req.params.id);
-        let data = await promisifiedReadFileSystem();
+        let data = await promisifiedReadFileSystem('todos.json');
 
         let idx = -1;
         for (let i = 0; i < data.length; i++) {
@@ -135,8 +122,61 @@ app.delete(`/todo/:id`, async (req, res) => {
         if (idx === -1) return res.status(404).send({ error: `Given ID ${id} is invalid` });
 
         data = data.filter(todo => todo.id !== id);
-        await promisifiedWriteFileSystem(data);
+        await promisifiedWriteFileSystem(data, 'todos.json');
         res.status(201).send();
+    } catch (e) {
+        res.status(500).send(e);
+    }
+});
+
+app.post('/signUp', async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    try {
+        const data = await promisifiedReadFileSystem('creds.json');
+        const user = data.users.find(user => user.username);
+
+        if (user) {
+            res.status(400).send({
+                error: "username already exists"
+            });
+        } else {
+            data.users.push({
+                username,
+                password
+            });
+            await promisifiedWriteFileSystem(data, 'creds.json');
+            res.status(200).send({
+                message: "success"
+            });
+        }
+    } catch (e) {
+        res.status(500).send(e);
+    }
+});
+
+app.post('/signIn', async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    try {
+        const data = await promisifiedReadFileSystem('creds.json');
+        const user = data.users.find(user => user.username);
+
+        if (user) {
+            const token = jwt.sign({
+                username: user.username
+            }, JWT_SECRET);
+
+            res.status(200).send({
+                token: token
+            });
+        } else {
+            res.status(404).send({
+                error: "username not found"
+            });
+        }
     } catch (e) {
         res.status(500).send(e);
     }
