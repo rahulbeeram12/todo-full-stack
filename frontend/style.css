@@ -1,0 +1,84 @@
+body {
+    margin: 0px;
+    padding: 0px;
+    font-family: 'Fira code';
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin-top: 1rem;
+}
+
+.main {
+    margin-top: 10%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.background-todo {
+    background-color: beige;
+    padding: 20px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.background-signin {
+    background-color: beige;
+    padding: 20px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.background-signup {
+    background-color: beige;
+    padding: 20px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+button[type=button] {
+    background-color: #04AA6D;
+    border: none;
+    color: white;
+    padding: 10px;
+    text-decoration: none;
+    font-size: large;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+input[type=text] {
+    border: none;
+    background-color:rgb(223, 229, 241);
+    color: black;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: large;
+}
+
+.todos-list {
+    margin: 20px;
+}
+
+.todo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px;
+    justify-content: space-between;
+}
+
+.disabled {
+    pointer-events: none;
+}
+
+.enabled {
+    pointer-events: auto;
+}

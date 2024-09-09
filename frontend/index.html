@@ -1,0 +1,55 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Todo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <header class="header">
+        <button id="signup" type="button" onclick="showSignUpPage()">Sign Up</button>
+        <button id="signin" type="button" onclick="showSignInPage()">Sign In</button>
+        <button id="logout" style="display: none;" type="button" onclick="logout()">Log Out</button>
+    </header>
+    <div class="main">
+        <div style="display: none;" class="background-todo">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h2 class="header-text">Hi</h2>
+                <h2 class="header-text-username"></h2>
+            </div>
+            <div class="header-container">
+                <input type="text" class="todoInput" placeholder="Add Something.." class="header-input" />
+                <button type="button" onclick="addTodo()">Add Todo</button>
+            </div>
+        </div>
+        <div style="display: none;" class="background-signup">
+            <h2 class="header-text">Sign Up</h2>
+            <div class="header-container">
+                <input id="sign-up-username" type="text" class="todoInput" placeholder="Username"
+                    class="header-input" />
+                <input id="sign-up-password" type="text" class="todoInput" placeholder="Password"
+                    class="header-input" />
+                <button type="button" onclick="signUp()">Sign Up</button>
+            </div>
+        </div>
+        <div style="display: none;" class="background-signin">
+            <h2 class="header-text">Sign In</h2>
+            <div class="header-container">
+                <input id="sign-in-username" type="text" class="todoInput" placeholder="Username"
+                    class="header-input" />
+                <input id="sign-in-password" type="text" class="todoInput" placeholder="Password"
+                    class="header-input" />
+                <button type="button" onclick="signIn()">Sign In</button>
+            </div>
+        </div>
+        <div style="display: none;" class="todos-list"></div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+
+</html>

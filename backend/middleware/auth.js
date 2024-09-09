@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
-const { promisifiedReadFileSystem } = require("../db/read");
-export const JWT_SECRET = 'JS_SECRET';
+
+const JWT_SECRET = "JS_SECRET";
 
 const auth = async (req, res, next) => {
     const token = req.headers.authorization;
@@ -12,7 +12,7 @@ const auth = async (req, res, next) => {
                     message: 'Unauthorized'
                 });
             } else {
-                req.body.username = decoded
+                req.body.username = decoded.username
                 next();
             }
         })
@@ -23,4 +23,4 @@ const auth = async (req, res, next) => {
     }
 }
 
-export default auth;
+module.exports = { JWT_SECRET, auth }
