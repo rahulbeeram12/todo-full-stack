@@ -56,14 +56,16 @@ app.post('/todo', auth, async (req, res) => {
 
         if (todo) throw new Error("Todo name already exists");
 
-        await client.todo.create({
+        const newTodo = await client.todo.create({
             data: {
                 name: name,
                 userId: userId,
                 completed: false
             }
         });
-        res.status(201).send();
+        res.status(201).send({
+            id: newTodo.id
+        });
     } catch (e) {
         res.status(500).send({
             error: e.message

@@ -4,6 +4,7 @@ const todosList = document.querySelector(".todos-list");
 
 let todos = [];
 let idx = 0;
+let todoIdMap = {};
 
 function showSignInPage() {
     document.getElementsByClassName("background-signup")[0].style.display = 'none';
@@ -51,7 +52,6 @@ async function logout() {
 }
 
 async function showTodos(username) {
-    console.log(username);
     document.getElementsByClassName("background-signin")[0].style.display = 'none';
     document.getElementById("signin").style.display = 'none';
     document.getElementById("signup").style.display = 'none';
@@ -71,6 +71,7 @@ async function showTodos(username) {
         const data = await response.json();
         data.forEach(todo => {
             const t = createTodo(todo.name);
+            todoIdMap[todo.name] = todo.id;
             todos.push(t);
         });
         render();
@@ -135,10 +136,11 @@ function createTodo(todoText) {
     todo.appendChild(deleteButton);
 
     deleteButton.addEventListener("click", () => {
-        deleteTodo(Number(todo.lastChild.classList[0].split('-')[1]));
+        deleteTodo(Number(todo.lastChild.classList[0].split('-')[1]), todo.firstChild.value);
     });
 
     editButton.addEventListener("click", () => {
+        const originalInputValue = todo.firstChild.value;
         // change input class to enabled and button text to save
         todo.firstChild.classList = [];
         todo.firstChild.setAttribute("class", "enabled");
@@ -147,19 +149,35 @@ function createTodo(todoText) {
 
         todo.insertBefore(saveButton, todo.children[1]);
 
-        saveButton.addEventListener("click", () => {
+        saveButton.addEventListener("click", async () => {
             const todoInput = todo.firstChild.value;
             if (!todoInput) {
                 alert("Todo shouldn't be empty");
                 return;
             }
 
-            todo.firstChild.classList = [];
-            todo.firstChild.setAttribute("class", "disabled");
-            const save = todo.children[1];
-            todo.removeChild(save);
-
-            todo.insertBefore(edit, todo.children[1]);
+            const todoId = todoIdMap[originalInputValue];
+            const response = await fetch(`http://localhost:4000/todo/${todoId}/${todoInput}`, {
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: localStorage.getItem("token")
+                }
+            });
+            if (response.ok) {
+                todo.firstChild.classList = [];
+                todo.firstChild.setAttribute("class", "disabled");
+                const save = todo.children[1];
+                todo.removeChild(save);
+    
+                todo.insertBefore(edit, todo.children[1]);
+                delete todoIdMap[originalInputValue];
+                todoIdMap[todoInput] = todoId;
+                alert('edited successfully');
+            } else {
+                alert('something went wrong while editing todo');
+            }
         });
         render();
     });
@@ -184,10 +202,12 @@ async function addTodo() {
         body: JSON.stringify({ name: todoInput.value, userId: parseFloat(localStorage.getItem("userId")) })
     });
     if (response.ok) {
+        const data = await response.json();
         const todo = createTodo(todoInput.value);
         todoInput.value = "";
 
         todos.push(todo);
+        todoIdMap[todoInput.value] = data.id;
         alert('added todo successfully');
         render();
     } else {
@@ -195,9 +215,21 @@ async function addTodo() {
     }
 }
 
-function deleteTodo(index) {
-    todos = todos.filter((todo) => Number(todo.lastChild.classList[0].split('-')[1]) !== index);
-    render();
+async function deleteTodo(index, todoName) {
+    const response = await fetch(`http://localhost:4000/todo/${todoIdMap[todoName]}`, {
+        method: 'DELETE',
+        headers: {
+            Authorization: localStorage.getItem("token")
+        }
+    });
+    if (response.ok) {
+        todos = todos.filter((todo) => Number(todo.lastChild.classList[0].split('-')[1]) !== index);
+        render();
+        delete todoIdMap[todoName];
+        alert('deleted todo successfully');
+    } else {
+        alert('something went wrong while deleting todo');
+    }
 }
 
 function render() {
